@@ -1,0 +1,8 @@
+name = "imt-mines-ales-calendar"
+main = "src/worker.ts"
+compatibility_date = "2025-04-03"
+
+[vars]
+STUDENT_ID = "20432"
+CACHE_TTL_SECONDS = "2700"
+SCHOOL_BASE_URL = "https://webdfd.mines-ales.fr/planning-eleves"
