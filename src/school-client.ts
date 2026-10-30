@@ -36,9 +36,10 @@ export async function fetchPersonalIcs(
 
 function sessionCookie(headers: Headers): string | undefined {
   const headersWithSetCookie = headers as Headers & { getSetCookie?: () => string[] };
-  const values = typeof headersWithSetCookie.getSetCookie === "function"
-    ? headersWithSetCookie.getSetCookie()
-    : [headers.get("set-cookie") ?? ""];
+  const values = [
+    ...(typeof headersWithSetCookie.getSetCookie === "function" ? headersWithSetCookie.getSetCookie() : []),
+    headers.get("set-cookie") ?? headers.get("Set-Cookie") ?? "",
+  ];
   const cookie = values
     .flatMap((value) => value.split(/,(?=[^;,]+=)/))
     .map((value) => value.split(";", 1)[0].trim())
