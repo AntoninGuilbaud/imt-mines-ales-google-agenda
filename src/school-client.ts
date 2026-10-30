@@ -20,19 +20,16 @@ export async function fetchPersonalIcs(
   studentId: string,
 ): Promise<string> {
   const loginUrl = new URL("../php/planning-eleves/login/login.php", `${baseUrl}/`).toString();
-  const entry = await fetchWithTimeout(`${baseUrl}/index.php`, { headers: { "User-Agent": USER_AGENT } });
-  const cookie = sessionCookie(entry.headers);
   const login = await fetchWithTimeout(loginUrl, {
     method: "POST",
     redirect: "manual",
     headers: {
       "Content-Type": "application/x-www-form-urlencoded",
       "User-Agent": USER_AGENT,
-      ...(cookie ? { Cookie: cookie } : {}),
     },
     body: new URLSearchParams({ Username: username, Password: password, url: "", login: "Connexion" }),
   });
-  const loginCookie = sessionCookie(login.headers) ?? cookie;
+  const loginCookie = sessionCookie(login.headers);
   if (login.status < 300 || login.status >= 400 || !loginCookie) {
     throw new Error("La connexion au planning de l'école a échoué.");
   }
