@@ -6,11 +6,9 @@ export async function fetchPersonalIcs(
   password: string,
   studentId: string,
 ): Promise<string> {
-  const loginUrl = `${baseUrl}/../php/planning-eleves/login/login.php`;
-  const entry = await fetch(`${baseUrl}/index.php`, {
-    headers: { "User-Agent": USER_AGENT },
-  });
-  const cookie = entry.headers.get("set-cookie")?.split(";", 1)[0];
+  const loginUrl = new URL("../php/planning-eleves/login/login.php", `${baseUrl}/`).toString();
+  const entry = await fetch(`${baseUrl}/index.php`, { headers: { "User-Agent": USER_AGENT } });
+  const cookie = sessionCookie(entry.headers);
   const login = await fetch(loginUrl, {
     method: "POST",
     redirect: "manual",
@@ -21,7 +19,7 @@ export async function fetchPersonalIcs(
     },
     body: new URLSearchParams({ Username: username, Password: password, url: "", login: "Connexion" }),
   });
-  const loginCookie = login.headers.get("set-cookie")?.split(";", 1)[0] ?? cookie;
+  const loginCookie = sessionCookie(login.headers) ?? cookie;
   if (login.status < 300 || login.status >= 400 || !loginCookie) {
     throw new Error("La connexion au planning de l'école a échoué.");
   }
@@ -34,4 +32,16 @@ export async function fetchPersonalIcs(
     throw new Error("Le site de l'école n'a pas renvoyé un calendrier ICS authentifié.");
   }
   return body;
+}
+
+function sessionCookie(headers: Headers): string | undefined {
+  const headersWithSetCookie = headers as Headers & { getSetCookie?: () => string[] };
+  const values = typeof headersWithSetCookie.getSetCookie === "function"
+    ? headersWithSetCookie.getSetCookie()
+    : [headers.get("set-cookie") ?? ""];
+  const cookie = values
+    .flatMap((value) => value.split(/,(?=[^;,]+=)/))
+    .map((value) => value.split(";", 1)[0].trim())
+    .find((value) => value.startsWith("PHPSESSID="));
+  return cookie || undefined;
 }
