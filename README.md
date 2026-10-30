@@ -90,59 +90,6 @@ Les tests utilisent uniquement une fixture ICS anonymisée.
 
 ## Déploiement pas à pas
 
-## Alternative recommandée : GitHub Actions + GitHub Pages
-
-Si Cloudflare Workers ne parvient pas à joindre le serveur de l'école depuis ses IP, utilisez le workflow inclus dans `.github/workflows/publish-calendar.yml`. GitHub Actions récupère le planning environ une fois par heure et GitHub Pages publie `calendar.ics` à une URL stable.
-
-### 1. Activer GitHub Pages
-
-Dans le dépôt GitHub : **Settings > Pages**, choisissez **GitHub Actions** comme source de déploiement.
-
-### 2. Ajouter les secrets
-
-Dans **Settings > Secrets and variables > Actions > New repository secret**, créez exactement :
-
-- `PLANNING_USERNAME` : votre identifiant école ;
-- `PLANNING_PASSWORD` : votre mot de passe école.
-
-Ne mettez jamais ces valeurs dans le code, `.env`, une issue ou le README.
-
-### 3. Lancer la première synchronisation
-
-Dans l'onglet **Actions**, sélectionnez **Publish personal calendar**, cliquez sur **Run workflow**, puis attendez une exécution verte. Le workflow s'exécute ensuite automatiquement toutes les heures à la minute 17.
-
-L'URL du flux sera :
-
-```text
-https://VOTRE_UTILISATEUR.github.io/NOM_DU_DEPOT/calendar.ics
-```
-
-Utilisez l'URL affichée dans le résumé du déploiement Pages plutôt que de deviner le nom d'utilisateur.
-
-### 4. Vérifier le flux
-
-Depuis votre ordinateur :
-
-```sh
-curl -sS -D /tmp/imt-pages-headers \
-  -o /tmp/imt-pages-calendar.ics \
-  https://VOTRE_UTILISATEUR.github.io/NOM_DU_DEPOT/calendar.ics
-grep -Ei 'HTTP/|content-type:' /tmp/imt-pages-headers
-grep -c '^BEGIN:VEVENT' /tmp/imt-pages-calendar.ics
-```
-
-Le workflow échoue volontairement si l'école renvoie une connexion, du HTML ou zéro événement : il ne publie pas un faux calendrier vide.
-
-### 5. Ajouter à Google Agenda
-
-Dans Google Agenda sur ordinateur : **Autres agendas > + > À partir de l'URL**, collez l'URL GitHub Pages, puis ajoutez-la dans un calendrier dédié comme `Cours IMT`.
-
-GitHub Actions peut publier une nouvelle version toutes les heures, mais Google peut encore mettre plusieurs heures, parfois 12 à 24 heures, à relire un abonnement. Pour vérifier immédiatement une correction, consultez d'abord l'URL avec `curl`, puis supprimez et recréez l'abonnement Google si nécessaire.
-
-### Limites GitHub Pages
-
-Le fichier ICS est publiquement accessible. Le lien ne contient donc pas de token secret : toute personne qui connaît l'URL peut lire le planning. Pour un lien non devinable, conservez l'approche Worker et corrigez l'accès réseau, ou ajoutez un domaine/une protection adaptée.
-
 ### 1. Créer le compte Cloudflare
 
 Allez sur <https://dash.cloudflare.com/sign-up>, créez un compte et choisissez le plan **Free**. N'ajoutez pas de carte bancaire et n'ajoutez pas de domaine : le projet utilise gratuitement `workers.dev`.

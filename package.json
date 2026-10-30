@@ -6,8 +6,7 @@
     "dev": "wrangler dev",
     "build": "tsc --noEmit",
     "test": "vitest run",
-    "dry-run": "tsx scripts/dry-run.ts",
-    "generate:live": "tsx scripts/generate-live.ts"
+    "dry-run": "tsx scripts/dry-run.ts"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^5.20261006.1",
