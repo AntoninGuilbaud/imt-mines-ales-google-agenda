@@ -1,4 +1,17 @@
 const USER_AGENT = "IMT-Mines-Ales-Personal-Calendar/1.0 (personal use; contact: local)";
+const REQUEST_TIMEOUT_MS = 15_000;
+
+async function fetchWithTimeout(input: RequestInfo | URL, init: RequestInit = {}): Promise<Response> {
+  const signal = AbortSignal.timeout(REQUEST_TIMEOUT_MS);
+  try {
+    return await fetch(input, { ...init, signal });
+  } catch (error) {
+    if (error instanceof DOMException && error.name === "TimeoutError") {
+      throw new Error("Le site de l'école n'a pas répondu dans le délai prévu.");
+    }
+    throw error;
+  }
+}
 
 export async function fetchPersonalIcs(
   baseUrl: string,
@@ -7,9 +20,9 @@ export async function fetchPersonalIcs(
   studentId: string,
 ): Promise<string> {
   const loginUrl = new URL("../php/planning-eleves/login/login.php", `${baseUrl}/`).toString();
-  const entry = await fetch(`${baseUrl}/index.php`, { headers: { "User-Agent": USER_AGENT } });
+  const entry = await fetchWithTimeout(`${baseUrl}/index.php`, { headers: { "User-Agent": USER_AGENT } });
   const cookie = sessionCookie(entry.headers);
-  const login = await fetch(loginUrl, {
+  const login = await fetchWithTimeout(loginUrl, {
     method: "POST",
     redirect: "manual",
     headers: {
@@ -23,7 +36,7 @@ export async function fetchPersonalIcs(
   if (login.status < 300 || login.status >= 400 || !loginCookie) {
     throw new Error("La connexion au planning de l'école a échoué.");
   }
-  const response = await fetch(`${baseUrl}/index.php?url=ics/eleve/${encodeURIComponent(studentId)}`, {
+  const response = await fetchWithTimeout(`${baseUrl}/index.php?url=ics/eleve/${encodeURIComponent(studentId)}`, {
     headers: { Cookie: loginCookie, "User-Agent": USER_AGENT },
   });
   const contentType = response.headers.get("content-type") ?? "";
@@ -31,6 +44,7 @@ export async function fetchPersonalIcs(
   if (!response.ok || !contentType.toLowerCase().includes("text/calendar") || !body.includes("BEGIN:VCALENDAR")) {
     throw new Error("Le site de l'école n'a pas renvoyé un calendrier ICS authentifié.");
   }
+
   return body;
 }
 
